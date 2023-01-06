@@ -30,3 +30,14 @@
 *.exe
 *.out
 *.app
+maker
+parser
+
+# Vscode Config
+.vscode
+
+# Font File
+*.ttf
+/build
+/big_font
+/lib
