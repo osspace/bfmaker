@@ -1,7 +1,0 @@
-- name: Auto Author Assign
-  # You may pin to the exact commit or the version.
-  # uses: toshimaru/auto-author-assign@2daaeb2988aef24bf37e636fe733f365c046aba0
-  uses: toshimaru/auto-author-assign@v1.6.2
-  with:
-    # A token for the repository
-    repo-token: # optional, default is ${{ github.token }}
