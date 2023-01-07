@@ -8,6 +8,18 @@ BitmapFont::BitmapFont(size_t row, size_t col) {
     bitmap_.resize((count + 7) / 8, 0);
 }
 
+BitmapFont::BitmapFont(const FT_Bitmap& ft_bitmap) {
+    FT_Int rows = ft_bitmap.rows;
+    FT_Int cols = ft_bitmap.width;
+    *this = BitmapFont(rows, cols);
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            if (ft_bitmap.buffer[i * cols + j])
+                set(i, j);
+        }
+    }
+}
+
 BitmapFont::~BitmapFont() {}
 
 size_t BitmapFont::row() const {
@@ -62,6 +74,7 @@ std::ofstream& operator<<(std::ofstream& out_fstream, const BitmapFont& font_bit
 }
 
 void BitmapFont::show() const {
+    std::cout << (int)this->delta_x << " " << (int)this->delta_y << std::endl;
     for (size_t i = 0; i < row_; i++) {
         for (size_t j = 0; j < col_; j++) {
             putchar(value(i, j) == false ? ' ' : '*');
