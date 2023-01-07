@@ -3,10 +3,13 @@
 
 #include <fstream>
 #include <vector>
+#include <ft2build.h>
+#include <freetype/freetype.h>
 
 class BitmapFont {
 public:
     BitmapFont() = default;
+    BitmapFont(const FT_Bitmap& ft_bitmap);
     BitmapFont(size_t row, size_t col);
     ~BitmapFont();
 
@@ -26,9 +29,12 @@ public:
 
     void show() const;
 
-private:
+public:
     size_t row_;
     size_t col_;
+
+    size_t delta_x;
+    size_t delta_y;
     std::vector<uint8_t> bitmap_;
 };
 

@@ -25,27 +25,21 @@ CXXFLAGS     = -std=c++17
 LIB_PARM     = -lfreetype
 LIB_PATH     = -L$(PROJECT_PATH)/lib
 
-
+all: maker parser
 
 maker: $(OBJ_FILE)
-	$(CXX) $(SRC_PATH)/bitmap_font_maker.o $(SRC_PATH)/bitmap_font.o $(SRC_PATH)/maker.o -o maker $(LIB_PARM) $(LIB_PATH)
+	$(CXX) $(SRC_PATH)/bitmap_font_maker.o $(SRC_PATH)/bitmap_font.o $(SRC_PATH)/maker.o -o maker.out $(LIB_PARM) $(LIB_PATH)
 
 parser: $(OBJ_FILE)
-	$(CXX) $(SRC_PATH)/bitmap_font.o $(SRC_PATH)/parser.o -o parser $(LIB_PARM) $(LIB_PATH)
+	$(CXX) $(SRC_PATH)/bitmap_font.o $(SRC_PATH)/parser.o -o parser.out $(LIB_PARM) $(LIB_PATH)
 	
 $(OBJ_FILE):%.o:%.cpp
 	$(CXX) -c $< $(CXXFLAGS) -o $@ $(CXXFLAGS) $(INCLUDE_PARM)
 
 .PHONY:clean
 clean:
-    ifeq ($(ARCH),Linux)
-		rm -f maker
-		rm -f parser 
-		rm -f ./source/*.o
-    else
-		del *.exe
-		del .\source\*.o
-    endif
+	@if ls *.out &> /dev/null; then rm *.out; fi
+	@if ls ./source/*.o &> /dev/null; then rm ./source/*.o; fi
 
 show:
 	@echo $(SOURCE_FILE)

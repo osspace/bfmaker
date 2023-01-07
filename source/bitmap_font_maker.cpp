@@ -1,19 +1,14 @@
 #include "bitmap_font_maker.h"
 
-BitmapFontMaker::BitmapFontMaker(std::string font_input_path, int32_t pixel) {
+std::unordered_map<int32_t, int32_t> BitmapFontMaker::pixel_to_max_bearing_y = {};
+
+BitmapFontMaker::BitmapFontMaker(std::string font_input_path) {
     // 初始化库
-    error_ = FT_Init_FreeType(&library_);
-    if (error_)
-        return;
+    if (FT_Init_FreeType(&library_))
+        exit(1);
     // 创建face对象
-    error_ = FT_New_Face(library_, font_input_path.c_str(), 0, &face_);
-    if (error_)
-        return;
-    // 设置字体像素
-    error_ = FT_Set_Char_Size(face_, FT_F26Dot6(pixel << 6), FT_F26Dot6(pixel << 6), 72, 72);
-    if (error_)
-        return;
-    slot_ = face_->glyph;
+    if (FT_New_Face(library_, font_input_path.c_str(), 0, &face_))
+        exit(1);
 }
 
 BitmapFontMaker::~BitmapFontMaker() {
@@ -23,33 +18,43 @@ BitmapFontMaker::~BitmapFontMaker() {
         FT_Done_FreeType(library_);
 }
 
-BitmapFont BitmapFontMaker::BitmapFontMaker::draw_bitmap(FT_Bitmap* bitmap) {
-    FT_Int rows = bitmap->rows;
-    FT_Int cols = bitmap->width;
-    BitmapFont ret_bitmap(rows, cols);
+static std::unordered_map<int32_t, int32_t> pixel_to_max_bearing_y;
 
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            if (bitmap->buffer[i * cols + j])
-                ret_bitmap.set(i, j);
-        }
-    }
-    return ret_bitmap;
-}
+BitmapFont BitmapFontMaker::get_unicode_bitmap(uint16_t unicode, int32_t pixel) {
+    if (!pixel_to_max_bearing_y.count(pixel))
+        pixel_to_max_bearing_y[pixel] = get_max_bearing_y(pixel);
+    int32_t max_bearing_y = pixel_to_max_bearing_y[pixel];
 
-BitmapFont BitmapFontMaker::get_unicode_bitmap(uint16_t unicode) {
-    error_ = FT_Load_Char(face_, unicode, FT_LOAD_RENDER);
-    if (error_)
-        return {};
+    if (FT_Set_Char_Size(face_, FT_F26Dot6(pixel << 6), FT_F26Dot6(pixel << 6), 72, 72))
+        exit(1);
+    slot_ = face_->glyph;
+    if (FT_Load_Char(face_, unicode, FT_LOAD_RENDER))
+        exit(1);
 
-    auto bitmap = draw_bitmap(&slot_->bitmap);
+    BitmapFont bitmap = BitmapFont(face_->glyph->bitmap);
+    bitmap.delta_x = face_->glyph->bitmap_left;                      // 计算x的偏移量
+    bitmap.delta_y = max_bearing_y - face_->glyph->bitmap_top - 1;   // 利用最大值计算y的偏移量
     return bitmap;
 }
 
-std::vector<BitmapFont> BitmapFontMaker::get_all_unicode_bitmap() {
+int32_t BitmapFontMaker::get_max_bearing_y(int32_t pixel) {
+    int32_t max_bearing_y = 0;
+    for (uint16_t unicode = 0; unicode < static_cast<uint16_t>(-1); unicode++) {
+        if (FT_Set_Pixel_Sizes(face_, pixel, pixel))
+            exit(1);
+
+        if (FT_Load_Char(face_, unicode, FT_LOAD_RENDER))
+            exit(1);
+
+        max_bearing_y = std::max(max_bearing_y, face_->glyph->bitmap_top);
+    }
+    return max_bearing_y;
+}
+
+std::vector<BitmapFont> BitmapFontMaker::get_all_unicode_bitmap(int32_t pixel) {
     std::vector<BitmapFont> ret_bitmap_ary = {};
     for (uint16_t unicode = 0; unicode < static_cast<uint16_t>(-1); unicode++) {
-        auto&& bitmap = get_unicode_bitmap(unicode);
+        auto bitmap = get_unicode_bitmap(unicode, pixel);
         ret_bitmap_ary.push_back(bitmap);
     }
     return ret_bitmap_ary;

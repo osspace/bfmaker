@@ -2,19 +2,22 @@
 #define _BFMAKER_SOURCE_BITMAP_FONT_MAKER_H
 
 #include "bitmap_font.h"
+#include <iostream>
+#include <unordered_map>
 #include <ft2build.h>
-#include FT_FREETYPE_H
+#include <freetype/ftglyph.h>
+#include <freetype/freetype.h>
 
 class BitmapFontMaker {
 public:
-    BitmapFontMaker(std::string font_input_path, int32_t pixel);
+    BitmapFontMaker(std::string font_input_path);
     ~BitmapFontMaker();
 
 public:
-    BitmapFont draw_bitmap(FT_Bitmap* bitmap);
-    BitmapFont get_unicode_bitmap(uint16_t unicode);
+    BitmapFont get_unicode_bitmap(uint16_t unicode, int32_t pixel);
 
-    std::vector<BitmapFont> get_all_unicode_bitmap();
+    int32_t get_max_bearing_y(int32_t pixel);
+    std::vector<BitmapFont> get_all_unicode_bitmap(int32_t pixel);
 
 private:
     FT_Library library_ = nullptr;
@@ -22,6 +25,11 @@ private:
     FT_GlyphSlot slot_ = nullptr;
     // 收集错误返回值
     FT_Error error_;
+
+    FT_Matrix matrix; /* transformation matrix */
+    FT_Vector pen;    /* untransformed origin  */
+
+    static std::unordered_map<int32_t, int32_t> pixel_to_max_bearing_y;
 };
 
 #endif   // end of _BFMAKER_SOURCE_BITMAP_FONT_MAKER_H
