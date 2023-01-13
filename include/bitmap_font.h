@@ -9,7 +9,7 @@
 class BitmapFont {
 public:
     BitmapFont() = default;
-    BitmapFont(int32_t pixel);
+    BitmapFont(int32_t height, int32_t width);
     ~BitmapFont();
 
 public:
@@ -26,7 +26,8 @@ public:
     void show() const;
 
 public:
-    size_t pixel_;
+    int32_t height_;
+    int32_t width_;
     std::vector<uint8_t> bitmap_;
 };
 

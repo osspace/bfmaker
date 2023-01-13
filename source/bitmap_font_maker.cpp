@@ -1,102 +1,79 @@
 #include "bitmap_font_maker.h"
 
-std::unordered_map<int32_t, int32_t> BitmapFontMaker::pixel_to_max_bearing_y = {};
-
-BitmapFontMaker::BitmapFontMaker(std::string font_input_path) {
+BitmapFontMaker::BitmapFontMaker(std::string in_font_path, int32_t pixel) {
     // 初始化库
-    if (FT_Init_FreeType(&library_))
+    if (FT_Init_FreeType(&ft_library_))
         exit(1);
     // 创建face对象
-    if (FT_New_Face(library_, font_input_path.c_str(), 0, &face_))
+    if (FT_New_Face(ft_library_, in_font_path.c_str(), 0, &ft_face_))
+        exit(1);
+    if (FT_Set_Pixel_Sizes(ft_face_, pixel, pixel))
         exit(1);
 }
 
 BitmapFontMaker::~BitmapFontMaker() {
-    if (face_)
-        FT_Done_Face(face_);
-    if (library_)
-        FT_Done_FreeType(library_);
+    if (ft_face_)
+        FT_Done_Face(ft_face_);
+    if (ft_library_)
+        FT_Done_FreeType(ft_library_);
 }
 
-static std::unordered_map<int32_t, int32_t> pixel_to_max_bearing_y;
+BitmapFont BitmapFontMaker::get_unicode_bitmap(uint16_t unicode) {
+    FT_BBox max_ft_box = get_max_ft_bbox();
+    int32_t max_height = max_ft_box.yMax - max_ft_box.yMin;
+    int32_t max_width = max_ft_box.xMax - max_ft_box.xMin;
 
-BitmapFont BitmapFontMaker::get_unicode_bitmap(uint16_t unicode, int32_t pixel) {
-    if (!pixel_to_max_bearing_y.count(pixel))
-        pixel_to_max_bearing_y[pixel] = get_max_bearing_y(pixel);
-    int32_t max_bearing_y = pixel_to_max_bearing_y[pixel];
-
-    if (FT_Set_Pixel_Sizes(face_, pixel, pixel))
+    if (FT_Load_Char(ft_face_, unicode, FT_LOAD_RENDER))
         exit(1);
-    if (FT_Load_Char(face_, unicode,
-                     /*FT_LOAD_RENDER|*/ FT_LOAD_FORCE_AUTOHINT |
-                         (true ? FT_LOAD_TARGET_NORMAL : FT_LOAD_MONOCHROME | FT_LOAD_TARGET_MONO))) {
-        exit(1);
-    }
     // 得到字模
     FT_Glyph glyph;
     // 把字形图像从字形槽复制到新的FT_Glyph对象glyph中。这个函数返回一个错误码并且设置glyph。
-    if (FT_Get_Glyph(face_->glyph, &glyph))
+    if (FT_Get_Glyph(ft_face_->glyph, &glyph))
         exit(1);
 
-    FT_BBox bbox;
-    FT_Glyph_Get_CBox(glyph, FT_GLYPH_BBOX_TRUNCATE, &bbox);
+    FT_BBox ft_bbox;
+    FT_Glyph_Get_CBox(glyph, FT_GLYPH_BBOX_TRUNCATE, &ft_bbox);
 
-    int32_t height = face_->glyph->bitmap.rows;
-    int32_t width = face_->glyph->bitmap.width;
-    int32_t box_height = bbox.yMax - bbox.yMin + 1;
-    // if (height > pixel || bbox.yMin >= 0 || width > pixel || box_height > pixel) {
-    //     return BitmapFont(pixel);
-    // }
-
-    int32_t delta_x = face_->glyph->bitmap_left;   // 计算x的偏移量
-    int32_t delta_y = max_bearing_y - bbox.yMax;   // 利用最大值计算y的偏移量
+    int32_t delta_x = ft_bbox.xMin - max_ft_box.xMin;   // 计算x的偏移量
+    int32_t delta_y = max_ft_box.yMax - ft_bbox.yMax;   // 利用最大值计算y的偏移量
     std::cout << delta_x << " " << delta_y << std::endl;
-    std::cout << max_bearing_y << std::endl;
-    std::cout << height << " " << width << std::endl;
-    BitmapFont bitmap = BitmapFont(pixel);
-    bitmap.set_bitmap(face_->glyph->bitmap, delta_x, delta_y);
-
-    std::cout << 1 << std::endl;
+    BitmapFont bitmap = BitmapFont(max_height, max_width);
+    bitmap.set_bitmap(ft_face_->glyph->bitmap, delta_x, delta_y);
     return bitmap;
 }
 
-int32_t BitmapFontMaker::get_max_bearing_y(int32_t pixel) {
-    int32_t max_bearing_y = 0;
+std::vector<BitmapFont> BitmapFontMaker::get_all_unicode_bitmap() {
+    std::vector<BitmapFont> ret_bitmap_ary = {};
     for (uint16_t unicode = 0; unicode < static_cast<uint16_t>(-1); unicode++) {
-        if (FT_Set_Pixel_Sizes(face_, pixel, pixel))
-            exit(1);
-        if (FT_Load_Char(face_, unicode,
+        auto bitmap = get_unicode_bitmap(unicode);
+        ret_bitmap_ary.push_back(bitmap);
+    }
+    return ret_bitmap_ary;
+}
+
+FT_BBox BitmapFontMaker::get_max_ft_bbox() {
+    FT_BBox max_ft_bbox;
+    max_ft_bbox.xMax = INT_MIN;
+    max_ft_bbox.yMax = INT_MIN;
+    max_ft_bbox.xMin = INT_MAX;
+    max_ft_bbox.yMin = INT_MAX;
+    for (int32_t unicode = 1; unicode < (1 << 16); unicode++) {
+        if (FT_Load_Char(ft_face_, unicode,
                          /*FT_LOAD_RENDER|*/ FT_LOAD_FORCE_AUTOHINT |
                              (true ? FT_LOAD_TARGET_NORMAL : FT_LOAD_MONOCHROME | FT_LOAD_TARGET_MONO))) {
             exit(1);
         }
-        // 得到字模
         FT_Glyph glyph;
-        // 把字形图像从字形槽复制到新的FT_Glyph对象glyph中。这个函数返回一个错误码并且设置glyph。
-        if (FT_Get_Glyph(face_->glyph, &glyph))
+        if (FT_Get_Glyph(ft_face_->glyph, &glyph))
             exit(1);
-        FT_BBox bbox;
-        FT_Glyph_Get_CBox(glyph, FT_GLYPH_BBOX_TRUNCATE, &bbox);
 
-        int32_t height = face_->glyph->bitmap.rows;
-        int32_t width = face_->glyph->bitmap.width;
-        int32_t box_height = bbox.yMax - bbox.yMin + 1;
-        // if (height > pixel || bbox.yMin >= 0 || width > pixel || box_height > pixel)
-        //     continue;
-        max_bearing_y = std::max(max_bearing_y, (int)face_->glyph->bitmap.rows);
-        if (max_bearing_y == 18) {
-            std::cout << bbox.yMax << " " << bbox.yMin << std::endl;
-            exit(0);
-        }
-    }
-    return max_bearing_y;
-}
+        FT_BBox ft_bbox;
+        FT_Glyph_Get_CBox(glyph, FT_GLYPH_BBOX_TRUNCATE, &ft_bbox);
 
-std::vector<BitmapFont> BitmapFontMaker::get_all_unicode_bitmap(int32_t pixel) {
-    std::vector<BitmapFont> ret_bitmap_ary = {};
-    for (uint16_t unicode = 0; unicode < static_cast<uint16_t>(-1); unicode++) {
-        auto bitmap = get_unicode_bitmap(unicode, pixel);
-        ret_bitmap_ary.push_back(bitmap);
+        max_ft_bbox.xMax = std::max(max_ft_bbox.xMax, ft_bbox.xMax);
+        max_ft_bbox.yMax = std::max(max_ft_bbox.yMax, ft_bbox.yMax);
+        max_ft_bbox.xMin = std::min(max_ft_bbox.xMin, ft_bbox.xMin);
+        max_ft_bbox.yMin = std::min(max_ft_bbox.yMin, ft_bbox.yMin);
     }
-    return ret_bitmap_ary;
+    return max_ft_bbox;
 }

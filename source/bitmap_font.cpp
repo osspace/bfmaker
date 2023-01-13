@@ -1,15 +1,16 @@
 #include "bitmap_font.h"
 #include <iostream>
 
-BitmapFont::BitmapFont(int32_t pixel) {
-    pixel_ = pixel;
-    bitmap_.resize((pixel * pixel + 7) / 8, 0);
+BitmapFont::BitmapFont(int32_t row, int32_t col) {
+    height_ = row;
+    width_ = col;
+    bitmap_.resize((row * col + 7) / 8, 0);
 }
 
 BitmapFont::~BitmapFont() {}
 
 void BitmapFont::set(size_t i, size_t j) {
-    size_t pos = i * pixel_ + j;
+    size_t pos = i * width_ + j;
     size_t base = pos / 8;
     size_t offset = pos % 8;
     bitmap_[base] |= (1 << offset);
@@ -29,7 +30,7 @@ void BitmapFont::set_bitmap(const FT_Bitmap& ft_bitmap, int delta_x, int delta_y
 }
 
 bool BitmapFont::value(size_t i, size_t j) const {
-    size_t pos = i * pixel_ + j;
+    size_t pos = i * width_ + j;
     size_t base = pos / 8;
     size_t offset = pos % 8;
     return bitmap_[base] & (1 << offset);
@@ -55,8 +56,8 @@ std::ofstream& operator<<(std::ofstream& out_fstream, const BitmapFont& font_bit
 }
 
 void BitmapFont::show() const {
-    for (size_t i = 0; i < pixel_; i++) {
-        for (size_t j = 0; j < pixel_; j++) {
+    for (size_t i = 0; i < height_; i++) {
+        for (size_t j = 0; j < width_; j++) {
             putchar(value(i, j) == false ? '0' : '*');
         }
         putchar('\n');
