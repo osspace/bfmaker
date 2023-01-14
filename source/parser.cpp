@@ -1,46 +1,79 @@
-// #include <vector>
-// #include <bitset>
-// #include <memory>
-// #include <fstream>
-// #include <iostream>
+#include <vector>
+#include <bitset>
+#include <memory>
+#include <fstream>
+#include <iostream>
 
-// #include "bitmap_font.h"
+#include "bitmap_font.h"
 
-// std::vector<BitmapFont> parse_font_file(std::string font_input_path) {
-//     std::ifstream input_file;
-//     input_file.open(font_input_path, std::ios::in | std::ios::binary);
+struct FileHeader {
+    char bmType[2];
+    uint16_t check_sum;
+    uint8_t font_size;
+    uint8_t reserved;
+    uint8_t max_bbox_width;
+    uint8_t max_bbox_height;
+    uint32_t size;
+};
 
-//     std::vector<BitmapFont> ret_bitmap_ary(1 << 16);
-//     for (int i = 0; i < (1 << 16); i++) {
-//         std::unique_ptr<uint8_t> meta_data(new uint8_t[2]);
-//         input_file.read(reinterpret_cast<char*>(meta_data.get()), 2);
-//         uint8_t rows = meta_data.get()[0];
-//         uint8_t cols = meta_data.get()[1];
-//         // std::cout << (int)rows << " " << (int)cols << std::endl;
+BitmapFont parser_bf_file(std::string bf_file_path, int32_t unicode) {
+    std::ifstream in_file_stream;
+    in_file_stream.open(bf_file_path, std::ios::in | std::ios::binary);
 
-//         BitmapFont font_bitmap(rows, cols);
-//         std::unique_ptr<uint8_t> bitmap_data(new uint8_t[font_bitmap.byte_size()]);
-//         input_file.read(reinterpret_cast<char*>(bitmap_data.get()), font_bitmap.byte_size());
-//         font_bitmap.set_bitmap(bitmap_data.get());
-//         ret_bitmap_ary[i] = font_bitmap;
-//     }
+    FileHeader file_header;
+    in_file_stream.read((char*)&file_header, sizeof(FileHeader));
 
-//     input_file.close();
-//     return ret_bitmap_ary;
-// }
+    // printf("%s\n", file_header.bmType);
+    // printf("%04X\n", file_header.check_sum);
+    // printf("%02X\n", file_header.font_size);
+    // printf("%02X\n", file_header.reserved);
+    // printf("%02X\n", file_header.max_bbox_width);
+    // printf("%02X\n", file_header.max_bbox_height);
+    // printf("%08X\n", file_header.size);
 
-// int main(int argc, char** argv) {
-//     if (argc != 3) {
-//         printf("Error：输入参数个数错误！");
-//         return 1;
-//     }
+    int32_t bitmap_size = (file_header.max_bbox_height * file_header.max_bbox_width + 7) / 8;
+    int32_t offset = 12 + unicode * (4 + bitmap_size);
+    // std::cout << offset << std::endl;
+    // std::cout << bitmap_size << std::endl;
+    in_file_stream.seekg(offset, std::ios::beg);
 
-//     std::string font_input_path = argv[1];
-//     char ch = argv[2][0];
+    uint8_t widht, height;
+    uint8_t offset_x, offset_y;
+    in_file_stream.read(reinterpret_cast<char*>(&widht), sizeof(widht));
+    in_file_stream.read(reinterpret_cast<char*>(&height), sizeof(height));
+    in_file_stream.read(reinterpret_cast<char*>(&offset_x), sizeof(offset_x));
+    in_file_stream.read(reinterpret_cast<char*>(&offset_y), sizeof(offset_y));
+    uint8_t* bitmap = new uint8_t[bitmap_size + 1];
+    in_file_stream.read(reinterpret_cast<char*>(bitmap), bitmap_size);
 
-//     auto bitmap_ary = parse_font_file(font_input_path);
+    BitmapFont bitmap_font(file_header.max_bbox_height, file_header.max_bbox_width);
+    bitmap_font.width_ = widht;
+    bitmap_font.height_ = height;
+    bitmap_font.offset_x_ = offset_x;
+    bitmap_font.offset_y_ = offset_y;
+    for (int i = 0; i < bitmap_size; i++) {
+        bitmap_font.bitmap_[i] = bitmap[i];
+    }
+    puts("");
+    delete[] bitmap;
+    bitmap = nullptr;
+    in_file_stream.close();
+    return bitmap_font;
+}
 
-//     std::cout << bitmap_ary[ch].row() << " " << bitmap_ary[ch].col() << std::endl;
-//     bitmap_ary[ch].show();
-//     return 0;
-// }
+int main(int argc, char** argv) {
+    if (argc != 2) {
+        printf("Error: Number of arguments must is 3!\n");
+        return 1;
+    }
+
+    std::string bf_file_path = argv[1];
+
+    parser_bf_file(bf_file_path, L'中').show();
+    parser_bf_file(bf_file_path, L'国').show();
+    parser_bf_file(bf_file_path, L'，').show();
+    parser_bf_file(bf_file_path, L',').show();
+    parser_bf_file(bf_file_path, L'A').show();
+    parser_bf_file(bf_file_path, L'g').show();
+    return 0;
+}

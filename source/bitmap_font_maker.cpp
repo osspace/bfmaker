@@ -18,10 +18,9 @@ BitmapFontMaker::~BitmapFontMaker() {
         FT_Done_FreeType(ft_library_);
 }
 
-BitmapFont BitmapFontMaker::get_unicode_bitmap(uint16_t unicode) {
-    FT_BBox max_ft_box = get_max_ft_bbox();
-    int32_t max_height = max_ft_box.yMax - max_ft_box.yMin;
-    int32_t max_width = max_ft_box.xMax - max_ft_box.xMin;
+BitmapFont BitmapFontMaker::get_unicode_bitmap(FT_BBox max_ft_bbox, uint16_t unicode) {
+    int32_t max_bbox_height = max_ft_bbox.yMax - max_ft_bbox.yMin;
+    int32_t max_bbox_width = max_ft_bbox.xMax - max_ft_bbox.xMin;
 
     if (FT_Load_Char(ft_face_, unicode, FT_LOAD_RENDER))
         exit(1);
@@ -34,18 +33,20 @@ BitmapFont BitmapFontMaker::get_unicode_bitmap(uint16_t unicode) {
     FT_BBox ft_bbox;
     FT_Glyph_Get_CBox(glyph, FT_GLYPH_BBOX_TRUNCATE, &ft_bbox);
 
-    int32_t delta_x = ft_bbox.xMin - max_ft_box.xMin;   // 计算x的偏移量
-    int32_t delta_y = max_ft_box.yMax - ft_bbox.yMax;   // 利用最大值计算y的偏移量
-    std::cout << delta_x << " " << delta_y << std::endl;
-    BitmapFont bitmap = BitmapFont(max_height, max_width);
+    int32_t delta_x = ft_bbox.xMin - max_ft_bbox.xMin;   // 计算x的偏移量
+    int32_t delta_y = max_ft_bbox.yMax - ft_bbox.yMax;   // 利用最大值计算y的偏移量
+    // std::cout << delta_x << " " << delta_y << std::endl;
+    BitmapFont bitmap = BitmapFont(max_bbox_height, max_bbox_width);
     bitmap.set_bitmap(ft_face_->glyph->bitmap, delta_x, delta_y);
     return bitmap;
 }
 
 std::vector<BitmapFont> BitmapFontMaker::get_all_unicode_bitmap() {
     std::vector<BitmapFont> ret_bitmap_ary = {};
+    FT_BBox max_ft_bbox = get_max_ft_bbox();
     for (uint16_t unicode = 0; unicode < static_cast<uint16_t>(-1); unicode++) {
-        auto bitmap = get_unicode_bitmap(unicode);
+        // printf("%d\n", unicode);
+        auto bitmap = get_unicode_bitmap(max_ft_bbox, unicode);
         ret_bitmap_ary.push_back(bitmap);
     }
     return ret_bitmap_ary;
@@ -58,9 +59,7 @@ FT_BBox BitmapFontMaker::get_max_ft_bbox() {
     max_ft_bbox.xMin = INT_MAX;
     max_ft_bbox.yMin = INT_MAX;
     for (int32_t unicode = 1; unicode < (1 << 16); unicode++) {
-        if (FT_Load_Char(ft_face_, unicode,
-                         /*FT_LOAD_RENDER|*/ FT_LOAD_FORCE_AUTOHINT |
-                             (true ? FT_LOAD_TARGET_NORMAL : FT_LOAD_MONOCHROME | FT_LOAD_TARGET_MONO))) {
+        if (FT_Load_Char(ft_face_, unicode, FT_LOAD_RENDER)) {
             exit(1);
         }
         FT_Glyph glyph;

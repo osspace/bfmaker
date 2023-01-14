@@ -20,14 +20,15 @@ public:
 
     std::vector<uint8_t> bitmap();
 
-    friend std::ifstream& operator>>(std::ifstream& in_fstream, BitmapFont& font_bitmap);
-    friend std::ofstream& operator<<(std::ofstream& out_fstream, const BitmapFont& font_bitmap);
-
     void show() const;
 
 public:
+    int32_t bbox_height_;
+    int32_t bbox_width_;
     int32_t height_;
     int32_t width_;
+    int32_t offset_x_;
+    int32_t offset_y_;
     std::vector<uint8_t> bitmap_;
 };
 

@@ -41,3 +41,4 @@ parser
 /build
 /big_font
 /lib
+*.bf
