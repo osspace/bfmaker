@@ -14,7 +14,7 @@ public:
     ~BitmapFontMaker();
 
 public:
-    BitmapFont get_unicode_bitmap(uint16_t unicode);
+    BitmapFont get_unicode_bitmap(FT_BBox max_ft_bbox, uint16_t unicode);
     std::vector<BitmapFont> get_all_unicode_bitmap();
     FT_BBox get_max_ft_bbox();
 
