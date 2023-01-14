@@ -9,32 +9,26 @@
 class BitmapFont {
 public:
     BitmapFont() = default;
-    BitmapFont(const FT_Bitmap& ft_bitmap);
-    BitmapFont(size_t row, size_t col);
+    BitmapFont(int32_t height, int32_t width);
     ~BitmapFont();
 
 public:
-    size_t row() const;
-    size_t col() const;
-    size_t byte_size() const;
-
     void set(size_t i, size_t j);
-    void set_bitmap(uint8_t* byte_stream);
+    void set_bitmap(const FT_Bitmap& ft_bitmap, int delta_x, int delta_y);
+
     bool value(size_t i, size_t j) const;
 
     std::vector<uint8_t> bitmap();
 
-    friend std::ifstream& operator>>(std::ifstream& in_fstream, BitmapFont& font_bitmap);
-    friend std::ofstream& operator<<(std::ofstream& out_fstream, const BitmapFont& font_bitmap);
-
     void show() const;
 
 public:
-    size_t row_;
-    size_t col_;
-
-    size_t delta_x;
-    size_t delta_y;
+    int32_t bbox_height_;
+    int32_t bbox_width_;
+    int32_t height_;
+    int32_t width_;
+    int32_t offset_x_;
+    int32_t offset_y_;
     std::vector<uint8_t> bitmap_;
 };
 

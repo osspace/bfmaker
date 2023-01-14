@@ -2,59 +2,69 @@
 #include <iostream>
 #include "bitmap_font_maker.h"
 
-void write_bitmap_to_bin_file(std::string font_output_path, const std::vector<BitmapFont>& bitmap_ary) {
-    std::ofstream outfile;
-    outfile.open(font_output_path, std::ios::binary);
-
-    for (const auto& bitmap : bitmap_ary) {
-        outfile << static_cast<uint8_t>(bitmap.row()) << static_cast<uint8_t>(bitmap.col());
-        outfile << bitmap;
-    }
-    outfile.close();
-}
-
 /**
  * @brief
  *
  * @param argc
  * @param argv[1]: 字体文件路径
- * @param argv[2]: 定制字体文件输出路径
+ * @param argv[2]: bf文件名
  * @param argv[3]: 字体大小
  * @return int
  */
 int main(int argc, char** argv) {
     if (argc != 4) {
-        printf("Error：输入参数个数错误！\n");
+        printf("Error: Number of arguments must is 3!\n");
         return 1;
     }
 
     std::string font_input_path = argv[1];
-    std::string font_output_path = argv[2];
+    std::string bf_file_name = argv[2];
+    std::string bf_file_path = bf_file_name + ".bf";
     int32_t pixel = atoi(argv[3]);
 
-    // BitmapFontMaker font_render(font_input_path);
-    // auto bitmap_ary = font_render.get_all_unicode_bitmap(pixel);
-    // std::cout << "Done: 所有字体生成成功！" << std::endl;
-    // write_bitmap_to_bin_file(font_output_path, bitmap_ary);
+    BitmapFontMaker font_render(font_input_path, pixel);
+    auto bitmap_ary = font_render.get_all_unicode_bitmap();
 
-    BitmapFontMaker font_render(font_input_path);
-    auto bitmap = font_render.get_unicode_bitmap(L'中', pixel);
-    bitmap.show();
-    bitmap = font_render.get_unicode_bitmap(L'国', pixel);
-    bitmap.show();
-    bitmap = font_render.get_unicode_bitmap(L'制', pixel);
-    bitmap.show();
-    bitmap = font_render.get_unicode_bitmap(L'造', pixel);
-    bitmap.show();
-    bitmap = font_render.get_unicode_bitmap(L'，', pixel);
-    bitmap.show();
-    bitmap = font_render.get_unicode_bitmap(L'A', pixel);
-    bitmap.show();
-    bitmap = font_render.get_unicode_bitmap(L'B', pixel);
-    bitmap.show();
-    bitmap = font_render.get_unicode_bitmap(L'C', pixel);
-    bitmap.show();
-    bitmap = font_render.get_unicode_bitmap(L'D', pixel);
-    bitmap.show();
+    std::ofstream outfile;
+    outfile.open(bf_file_path, std::ios::binary);
+    [&]() -> void {
+        outfile << "BF";
+        char* byte_stream = new char[4];
+        uint16_t check_sum = 0X0000;
+        memcpy(byte_stream, &check_sum, 2);
+        outfile.write(byte_stream, 2);
+        memcpy(byte_stream, &pixel, 1);
+        outfile.write(byte_stream, 1);
+        uint8_t reserved = 0X00;
+        memcpy(byte_stream, &reserved, 1);
+        outfile.write(byte_stream, 1);
+        memcpy(byte_stream, &bitmap_ary[0].bbox_width_, 1);
+        outfile.write(byte_stream, 1);
+        memcpy(byte_stream, &bitmap_ary[0].bbox_height_, 1);
+        outfile.write(byte_stream, 1);
+        int32_t size = 1 << 16;
+        memcpy(byte_stream, &size, 4);
+        outfile.write(byte_stream, 4);
+        delete[] byte_stream;
+        byte_stream = nullptr;
+    }();   // 文件头
+    [&]() -> void {
+        char* byte_stream = new char[2];
+        for (auto bitmap : bitmap_ary) {
+            memcpy(byte_stream, &bitmap.width_, 1);
+            outfile.write(byte_stream, 1);
+            memcpy(byte_stream, &bitmap.height_, 1);
+            outfile.write(byte_stream, 1);
+            memcpy(byte_stream, &bitmap.offset_x_, 1);
+            outfile.write(byte_stream, 1);
+            memcpy(byte_stream, &bitmap.offset_y_, 1);
+            outfile.write(byte_stream, 1);
+            outfile.write(reinterpret_cast<const char*>(bitmap.bitmap_.data()), bitmap.bitmap_.size());
+        }
+        outfile.close();
+    }();   // 文件体
+
+    std::cout << bitmap_ary[0].bitmap_.size() << std::endl;
+    printf("Done: bf file generated successfully");
     return 0;
 }
