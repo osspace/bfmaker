@@ -63,7 +63,7 @@ BitmapFont parser_bf_file(std::string bf_file_path, int32_t unicode) {
 
 int main(int argc, char** argv) {
     if (argc != 2) {
-        printf("Error: Number of arguments must is 3!\n");
+        printf("Error: Number of arguments must is 2!\n");
         return 1;
     }
 
