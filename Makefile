@@ -34,7 +34,7 @@ SHELL := /bin/bash
 
 freetype:
 	@echo ==============================freetype==============================
-	@$(FREETYPE_UNIX_PATH)/configure
+	@sudo $(FREETYPE_UNIX_PATH)/configure
 	@make -C $(FREETYPE_PATH)/
 	@make -C $(FREETYPE_PATH)/
 	@cp $(FREETYPE_PATH)/objs/.libs/libfreetype.a $(PROJECT_PATH)/
