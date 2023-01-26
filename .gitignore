@@ -36,7 +36,7 @@ parser
 # Vscode Config
 .vscode
 
-# Font File
+# Bfmaker Files
 *.ttf
 /build
 /big_font
