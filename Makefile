@@ -26,14 +26,16 @@ INCLUDE_PARM = $(foreach d, $(INCLUDE_PATH), -I$d)
 CXXFLAGS     = -std=c++17
 LIB_PARM     = -lfreetype -L$(LIB_PATH)/lib
 
-all: freetyper maker parser
+all: $(PROJECT_PATH)/freetype_lib freetyper maker parser
 
 .ONESHELL:
 SHELL := /bin/bash
 
+$(PROJECT_PATH)/freetype_lib:
+	@mkdir -p $@
+
 freetyper:
 	@echo ==============================freetype==============================
-	$(call create_folder, "$(PROJECT_PATH)/freetype_lib")
 	@cd $(FREETYPE_UNIX_PATH) && ./configure --prefix=$(PROJECT_PATH)/freetype_lib
 	@make install -C $(FREETYPE_PATH)/
 	$(call print_done, "freetype生成成功！")
@@ -76,14 +78,4 @@ endef
 # func: print_done(msg)
 define print_done
 	echo -e "\033[32mDone:$(1)\033[0m"
-endef
-
-# func: create_folder(folder_name)
-define create_folder
-if [ ! -d $(1) ]; then 
-	mkdir $(1)
-	$(call print_done, "$(1)文件夹创建成功")
-else
-	$(call print_hint, "$(1)文件夹已存在，不需要创建")
-fi
 endef
