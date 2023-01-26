@@ -42,3 +42,4 @@ parser
 /big_font
 /lib
 *.bf
+freetype_lib/
