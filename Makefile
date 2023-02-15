@@ -34,7 +34,7 @@ $(PWD_PATH)/freetype_lib:
 
 freetyper:
 	@echo ==============================freetype==============================
-	cd $(FREETYPE_PATH) && ./configure --prefix=$(PWD_PATH)/freetype_lib --disable-shared --enable-static
+	cd $(FREETYPE_PATH) && ./configure --prefix=$(PWD_PATH)/freetype_lib --enable-static=yes --enable-shared=no  --with-png=no --with-bzip2=no --with-zlib=no
 	make -C $(FREETYPE_PATH)/
 	cd $(FREETYPE_PATH) && make install
 	$(call print_done, "freetype生成成功！")
