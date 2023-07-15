@@ -33,8 +33,6 @@
 maker
 parser
 
-# Vscode Config
-.vscode
 
 # Font File
 *.ttf
@@ -42,3 +40,9 @@ parser
 /big_font
 /lib
 *.bf
+
+# Hidden File
+.xmake
+.vscode
+.vs
+.github

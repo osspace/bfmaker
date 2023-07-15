@@ -1,4 +1,4 @@
-#include <string>
+﻿#include <string>
 #include <iostream>
 #include "bitmap_font_maker.h"
 
@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
         printf("Error: Number of arguments must is 3!\n");
         return 1;
     }
-
+    
     std::string font_input_path = argv[1];
     std::string bf_file_name = argv[2];
     std::string bf_file_path = bf_file_name + ".bf";

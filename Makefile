@@ -7,7 +7,7 @@ endif
 
 PROJECT_PATH = $(PWD_PATH)
 LIB_PATH     = $(PROJECT_PATH)
-INCLUDE_PATH = $(PROJECT_PATH)/freetype-2.12.1/include \
+INCLUDE_PATH = $(PROJECT_PATH)/freetype/include \
 			   $(PROJECT_PATH)/include
 SOURCE_FILE  = $(wildcard ./source/*.cpp)
 OBJ_FILE     = $(patsubst %.cpp,%.o,$(SOURCE_FILE))
@@ -27,18 +27,21 @@ LIB_PATH     = -L$(PROJECT_PATH)/lib
 
 all: maker parser
 
+test: $(OBJ_FILE)
+	$(CXX) $(SRC_PATH)/test.o $(SRC_PATH)/bitmap_font_maker.o $(SRC_PATH)/bitmap_font.o -o test.exe $(LIB_PARM) $(LIB_PATH)
+
 maker: $(OBJ_FILE)
-	$(CXX) $(SRC_PATH)/bitmap_font_maker.o $(SRC_PATH)/bitmap_font.o $(SRC_PATH)/maker.o -o maker.out $(LIB_PARM) $(LIB_PATH)
+	$(CXX) $(SRC_PATH)/bitmap_font_maker.o $(SRC_PATH)/bitmap_font.o $(SRC_PATH)/maker.o -o maker.exe $(LIB_PARM) $(LIB_PATH)
 
 parser: $(OBJ_FILE)
-	$(CXX) $(SRC_PATH)/bitmap_font.o $(SRC_PATH)/parser.o -o parser.out $(LIB_PARM) $(LIB_PATH)
+	$(CXX) $(SRC_PATH)/bitmap_font.o $(SRC_PATH)/parser.o -o parser.exe $(LIB_PARM) $(LIB_PATH)
 	
 $(OBJ_FILE):%.o:%.cpp
 	$(CXX) -c $< $(CXXFLAGS) -o $@ $(CXXFLAGS) $(INCLUDE_PARM)
 
 .PHONY:clean
 clean:
-	@if ls *.out &> /dev/null; then rm *.out; fi
+	@if ls *.exe &> /dev/null; then rm *.exe; fi
 	@if ls ./source/*.o &> /dev/null; then rm ./source/*.o; fi
 
 show:

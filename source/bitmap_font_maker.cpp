@@ -1,4 +1,4 @@
-#include "bitmap_font_maker.h"
+﻿#include "bitmap_font_maker.h"
 
 BitmapFontMaker::BitmapFontMaker(std::string in_font_path, int32_t pixel) {
     // 初始化库
