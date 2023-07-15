@@ -1,4 +1,4 @@
-#include "bitmap_font.h"
+﻿#include "bitmap_font.h"
 #include <iostream>
 
 BitmapFont::BitmapFont(int32_t row, int32_t col) {
